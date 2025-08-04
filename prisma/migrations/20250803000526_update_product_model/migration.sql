@@ -1,7 +1,0 @@
--- AlterTable
-ALTER TABLE `product` ADD COLUMN `imageUrl` VARCHAR(191) NULL,
-    ADD COLUMN `stock` INTEGER NOT NULL DEFAULT 0,
-    ADD COLUMN `userId` INTEGER NULL;
-
--- AddForeignKey
-ALTER TABLE `Product` ADD CONSTRAINT `Product_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
