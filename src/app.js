@@ -7,10 +7,11 @@
   const app = express();
 
   app.use(cookieParser());
-  app.use(cors({
-    origin: 'https://jaxel-tes.vercel.app', // sesuaikan front-end kamu
-    credentials: true,
-  }));
+app.options('*', cors({
+  origin: 'https://jaxel-tes.vercel.app',
+  credentials: true,
+}));
+
   app.use(express.json());
 
   // ⬇️ Import semua routes
