@@ -45,33 +45,34 @@ const login = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(401).json({ message: 'Password salah' });
 
-    const token = jwt.sign( 
+    const token = jwt.sign(
       { id: user.id, email: user.email },
       process.env.JWT_SECRET || 'secretkey',
       { expiresIn: '7d' }
     );
 
-    // ✅ Simpan token ke HTTP-only cookie
-  res.cookie('token', token, {
-  httpOnly: true,
-  secure: true,
-  sameSite: 'None', // <— penting untuk cross-origin seperti vercel dan replit
-});
-
+    // Simpan token di cookie
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'None',
+    });
 
     res.json({
       message: 'Login berhasil',
+      token, // kirim juga ke FE
       user: {
         id: user.id,
         name: user.name,
-        email: user.email
-      }
+        email: user.email,
+      },
     });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Terjadi kesalahan saat login' });
   }
 };
+
 
 // ✅ GET semua user
 const getAllUsers = async (req, res) => {
