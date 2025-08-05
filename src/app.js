@@ -1,12 +1,12 @@
-  // app.js
-  const express = require('express');
-  require('dotenv').config();
-  const cors = require('cors');
-  const cookieParser = require('cookie-parser');
+// app.js
+const express = require('express');
+require('dotenv').config();
+const cors = require('cors');
+const cookieParser = require('cookie-parser');
 
-  const app = express();
+const app = express();
 
-  app.use(cookieParser());
+app.use(cookieParser());
 const allowedOrigins = ['https://jaxel-tes.vercel.app', 'http://localhost:3000'];
 
 app.use(cors({
@@ -21,15 +21,18 @@ app.use(cors({
 }));
 
 
-  app.use(express.json());
+app.use(express.json());
 
-  // ⬇️ Import semua routes
-  const authRoutes = require('./routes/auth.routes');
-  const productRoutes = require('./routes/product.routes');
+// ⬇️ Import semua routes
+const authRoutes = require('./routes/auth.routes');
+const productRoutes = require('./routes/product.routes');
+const emailRoute = require('./routes/email.route'); // atau sesuaikan path
 
-  // ⬇️ Gunakan prefix route
-  app.use('/api/products', productRoutes); // ✅ tambahkan ini
-  app.use('/api', authRoutes);
-  
 
-  module.exports = app;
+// ⬇️ Gunakan prefix route
+app.use('/api/products', productRoutes); // ✅ tambahkan ini
+app.use('/api', authRoutes);
+app.use('/api', emailRoute);
+
+
+module.exports = app;

@@ -48,15 +48,17 @@ const login = async (req, res) => {
     const token = jwt.sign(
       { id: user.id, email: user.email },
       process.env.JWT_SECRET || 'secretkey',
-      { expiresIn: '7d' }
+      { expiresIn: '1d' }
     );
 
     // Simpan token di cookie
     res.cookie('token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'None',
+      secure: false,            // ⛔ HARUS false di lokal (karena pakai HTTP)
+      sameSite: 'Lax', 
+        path: '/',          // ✅ 'Lax' atau bahkan 'Strict' cukup di lokal
     });
+
 
     res.json({
       message: 'Login berhasil',
@@ -72,6 +74,23 @@ const login = async (req, res) => {
     res.status(500).json({ error: 'Terjadi kesalahan saat login' });
   }
 };
+
+// LOGOUT
+const logout = (req, res) => {
+  res.clearCookie('token', {
+    httpOnly: true,
+    sameSite: 'Lax',
+    secure: false,
+    path: '/', // ← WAJIB ini!
+  });
+
+  res.clearCookie('user_email', { path: '/' });
+  res.clearCookie('user_name', { path: '/' });
+
+  res.json({ message: 'Logout berhasil' });
+};
+
+
 
 
 // ✅ GET semua user
@@ -119,6 +138,7 @@ const getUserById = async (req, res) => {
 module.exports = {
   register,
   login,
+  logout, // ✅ tambahkan ini
   getAllUsers,
   getUserById,
 };
