@@ -53,7 +53,7 @@ const login = async (req, res) => {
 
     // Simpan token di cookie
     res.cookie('token', token, {
-      httpOnly: true,
+      httpOnly: false,
       secure: true,            // ⛔ HARUS false di lokal (karena pakai HTTP)
       sameSite: 'Lax', 
         path: '/',          // ✅ 'Lax' atau bahkan 'Strict' cukup di lokal
@@ -78,7 +78,7 @@ const login = async (req, res) => {
 // LOGOUT
 const logout = (req, res) => {
   res.clearCookie('token', {
-    httpOnly: true,
+    httpOnly: false,
     sameSite: 'Lax',
     secure: true,
     path: '/', // ← WAJIB ini!

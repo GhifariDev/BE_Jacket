@@ -13,8 +13,11 @@ model User {
   email    String    @unique
   password String
 
-  // Relasi: Satu user bisa punya banyak produk
-  products Product[] 
+  // Relasi
+  products   Product[]
+  reviews    Review[]
+  cartItems  CartItem[]
+  orders     Order[]
 }
 
 model Product {
@@ -23,13 +26,64 @@ model Product {
   description String
   price       Float
   category    String
-  stock       Int      @default(0)        // Stok default 0
-  imageUrl    String?                     // Link gambar (opsional)
-  
-  // Foreign key ke User (opsional)
+  stock       Int      @default(0)
+  imageUrl    String?
+
   userId      Int?
   user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  cartItems   CartItem[]
+  orderItems  OrderItem[]
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  content   String
+  rating    Int
+  createdAt DateTime @default(now())
+
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CartItem {
+  id        Int     @id @default(autoincrement())
+  userId    Int
+  productId Int
+  quantity  Int     @default(1)
+
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model Order {
+  id         Int          @id @default(autoincrement())
+  userId     Int
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime     @default(now())
+  status     OrderStatus  @default(PENDING)
+
+  orderItems OrderItem[]
+}
+
+model OrderItem {
+  id        Int     @id @default(autoincrement())
+  orderId   Int
+  productId Int
+  quantity  Int
+  price     Float   // snapshot harga saat pembelian
+
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  DELIVERED
+  CANCELLED
 }

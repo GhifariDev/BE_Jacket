@@ -27,12 +27,22 @@ app.use(express.json());
 const authRoutes = require('./routes/auth.routes');
 const productRoutes = require('./routes/product.routes');
 const emailRoute = require('./routes/email.route'); // atau sesuaikan path
-
-
+const middlewareAuth = require('./middlewares/auth.js');
+const cartRoutes = require('./routes/cart.routes');
+const orderRoutes = require('./routes/order.routes');
 // ⬇️ Gunakan prefix route
 app.use('/api/products', productRoutes); // ✅ tambahkan ini
+app.use('/api/auth', middlewareAuth);
 app.use('/api', authRoutes);
 app.use('/api', emailRoute);
+app.use('/api/cart', cartRoutes);
+app.use('/api/orders', orderRoutes);
+
+const companyReviewRoutes = require('./routes/companyReview');
+// Middleware dan konfigurasi lain...
+
+app.use('/api/review', companyReviewRoutes); // ✅ sekarang ini akan bekerja
+
 
 
 module.exports = app;

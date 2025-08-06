@@ -1,20 +1,26 @@
 const express = require('express');
 const router = express.Router();
-const { register, login , getAllUsers, getUserById , logout } = require('../controllers/auth.controller');
+const authenticateUser = require('../middlewares/auth');
+const { register, login, logout, getAllUsers, getUserById } = require('../controllers/auth.controller');
 
-
-// Register Route
+// Register
 router.post('/register', register);
 
-// Login Route  
+// Login
 router.post('/login', login);
 
-// ✅ GET semua user
-router.get('/user', getAllUsers);
-
-// ✅ GET user by ID
+// Logout
 router.post('/logout', logout);
 
+// Cek apakah user sudah login (⬅️ penting untuk frontend auth check)
+router.get('/check', authenticateUser, (req, res) => {
+  res.status(200).json({ loggedIn: true, user: req.user });
+});
+
+// Get semua user
+router.get('/user', getAllUsers);
+
+// Get user by ID
 router.get('/user/:id', getUserById);
 
 module.exports = router;
