@@ -6,12 +6,20 @@ datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
+enum Role {
+  user
+  admin
+}
+
 
 model User {
   id       Int       @id @default(autoincrement())
   name     String
   email    String    @unique
   password String
+
+  role     Role      @default(user) // pakai enum ⬅️
+
 
   // Relasi
   products   Product[]
@@ -28,6 +36,7 @@ model Product {
   category    String
   stock       Int      @default(0)
   imageUrl    String?
+  position    Int?    // ⬅️ ini urutan manual
 
   userId      Int?
   user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -57,6 +66,9 @@ model CartItem {
 
   user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, productId]) // ⬅️ ini mencegah duplikat
+
 }
 
 model Order {

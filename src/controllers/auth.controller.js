@@ -47,33 +47,49 @@ const login = async (req, res) => {
 
     const token = jwt.sign(
       { id: user.id, email: user.email },
-      process.env.JWT_SECRET || 'secretkey',
+      process.env.JWT_SECRET,
       { expiresIn: '1d' }
     );
 
-    // Simpan token di cookie
+    // ⬇️ Set cookie token
     res.cookie('token', token, {
-      httpOnly: false,
-      secure: true,            // ⛔ HARUS false di lokal (karena pakai HTTP)
-      sameSite: 'Lax', 
-        path: '/',          // ✅ 'Lax' atau bahkan 'Strict' cukup di lokal
+      httpOnly: false,        // ⬅️ untuk frontend baca cookie, false
+      secure: false,          // ⛔ HARUS false di lokal
+      sameSite: 'Lax',
+      path: '/',
     });
 
+    // ⬇️ Set cookie tambahan: name & role
+    res.cookie('user_name', encodeURIComponent(user.name), {
+      httpOnly: false,
+      sameSite: 'Lax',
+      path: '/',
+    });
 
+    res.cookie('user_role', user.role, {
+      httpOnly: false,
+      sameSite: 'Lax',
+      path: '/',
+    });
+
+    // ⬇️ Kirim response
     res.json({
       message: 'Login berhasil',
-      token, // kirim juga ke FE
+      token,
       user: {
         id: user.id,
         name: user.name,
         email: user.email,
+        role: user.role,
       },
     });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Terjadi kesalahan saat login' });
   }
 };
+
 
 // LOGOUT
 const logout = (req, res) => {
@@ -132,7 +148,25 @@ const getUserById = async (req, res) => {
     res.status(500).json({ error: 'Gagal mengambil user' });
   }
 };
+const me = async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true, // ⬅️ kirim role ke frontend
+      },
+    });
 
+    if (!user) return res.status(401).json({ message: 'Unauthorized' });
+
+    res.json(user); // ⬅️ role dikirim di sini
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
 
 
 module.exports = {
@@ -141,4 +175,5 @@ module.exports = {
   logout, // ✅ tambahkan ini
   getAllUsers,
   getUserById,
+  me,
 };

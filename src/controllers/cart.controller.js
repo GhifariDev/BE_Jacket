@@ -34,12 +34,14 @@ exports.getCart = async (req, res) => {
   const userId = req.user.id;
 
   try {
-    const cart = await prisma.cartItem.findMany({
+    const cartItems = await prisma.cartItem.findMany({
       where: { userId },
       include: { product: true }
     });
-    res.json(cart);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+
+    res.json(cartItems); // ⬅️ penting: harus array
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 };
+

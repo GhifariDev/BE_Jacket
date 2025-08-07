@@ -22,6 +22,7 @@ app.use(cors({
 
 
 app.use(express.json());
+app.use('/uploads', express.static('uploads'));
 
 // ⬇️ Import semua routes
 const authRoutes = require('./routes/auth.routes');
@@ -37,6 +38,8 @@ app.use('/api', authRoutes);
 app.use('/api', emailRoute);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
+const adminProductRoutes = require('./routes/adminProduct.route');
+app.use('/api/admin-products', adminProductRoutes);
 
 const companyReviewRoutes = require('./routes/companyReview');
 // Middleware dan konfigurasi lain...
