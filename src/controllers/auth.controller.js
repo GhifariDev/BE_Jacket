@@ -53,7 +53,7 @@ const login = async (req, res) => {
 
     // ⬇️ Set cookie token
     res.cookie('token', token, {
-      httpOnly: false,        // ⬅️ untuk frontend baca cookie, false
+      httpOnly: true,        // ⬅️ untuk frontend baca cookie, false
       secure: false,          // ⛔ HARUS false di lokal
       sameSite: 'Lax',
       path: '/',
@@ -61,13 +61,13 @@ const login = async (req, res) => {
 
     // ⬇️ Set cookie tambahan: name & role
     res.cookie('user_name', encodeURIComponent(user.name), {
-      httpOnly: false,
+      httpOnly: true,
       sameSite: 'Lax',
       path: '/',
     });
 
     res.cookie('user_role', user.role, {
-      httpOnly: false,
+      httpOnly: true,
       sameSite: 'Lax',
       path: '/',
     });
@@ -94,7 +94,7 @@ const login = async (req, res) => {
 // LOGOUT
 const logout = (req, res) => {
   res.clearCookie('token', {
-    httpOnly: false,
+    httpOnly: true,
     sameSite: 'Lax',
     secure: true,
     path: '/', // ← WAJIB ini!

@@ -7,7 +7,7 @@ const cookieParser = require('cookie-parser');
 const app = express();
 
 app.use(cookieParser());
-const allowedOrigins = ['https://jaxel-tes.vercel.app', 'http://localhost:3000'];
+const allowedOrigins = ['https://jaxel-tes.vercel.app', 'http://localhost:3000', 'http://10.255.10.177:3000', 'https://b3c67a3f5cf7.ngrok-free.app'];
 
 app.use(cors({
   origin: function (origin, callback) {
