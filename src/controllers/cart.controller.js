@@ -1,47 +1,69 @@
-const prisma = require('../prisma/client');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
-// ➕ Tambah item ke cart
+// 🛒 Tambah produk ke cart
 exports.addToCart = async (req, res) => {
-  const { productId, quantity } = req.body;
-  const userId = req.user.id; // pastikan sudah login
-
   try {
-    // Cek apakah item sudah ada di cart
-    const existing = await prisma.cartItem.findFirst({
-      where: { userId, productId }
+    const { productId, quantity } = req.body;
+    const userId = req.user.id;
+
+    // Cek produk
+    const product = await prisma.product.findUnique({
+      where: { id: productId },
+    });
+    if (!product) {
+      return res.status(404).json({ message: "Produk tidak ditemukan" });
+    }
+
+    // Cek apakah sudah ada di cart
+    const existingItem = await prisma.cartItem.findFirst({
+      where: { userId, productId },
     });
 
-    if (existing) {
-      // Update quantity
-      await prisma.cartItem.update({
-        where: { id: existing.id },
-        data: { quantity: existing.quantity + quantity }
+    let cartItem;
+    if (existingItem) {
+      // Update jumlah
+      cartItem = await prisma.cartItem.update({
+        where: { id: existingItem.id },
+        data: { quantity: existingItem.quantity + (quantity || 1) },
+        include: { product: true },
       });
     } else {
-      await prisma.cartItem.create({
-        data: { userId, productId, quantity }
+      // Tambah baru
+      cartItem = await prisma.cartItem.create({
+        data: {
+          userId,
+          productId,
+          quantity: quantity || 1,
+        },
+        include: { product: true },
       });
     }
 
-    res.json({ message: 'Item added to cart' });
+    return res.json({
+      message: "Produk berhasil ditambahkan ke keranjang",
+      cartItem,
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error(err);
+    res.status(500).json({ message: "Gagal menambahkan produk" });
   }
 };
 
 // 🔍 Lihat cart user
 exports.getCart = async (req, res) => {
-  const userId = req.user.id;
-
   try {
+    const userId = req.user.id;
+
     const cartItems = await prisma.cartItem.findMany({
       where: { userId },
-      include: { product: true }
+      include: { product: true },
     });
 
-    res.json(cartItems); // ⬅️ penting: harus array
+    res.json(cartItems);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: "Gagal mengambil cart" });
   }
 };
-
+  

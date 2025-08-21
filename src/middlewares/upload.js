@@ -1,26 +1,49 @@
 const multer = require('multer');
 const path = require('path');
 
-// Storage config
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/'); // folder simpan
+// Storage untuk produk
+const storageProduct = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/products'); // folder khusus produk
   },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + '-' + file.originalname); // nama unik
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + '-' + file.originalname);
   },
 });
 
-// Filter file
-const fileFilter = (req, file, cb) => {
+const fileFilterProduct = (req, file, cb) => {
   const ext = path.extname(file.originalname).toLowerCase();
-  if (ext === '.jpg' || ext === '.jpeg' || ext === '.png') {
+  if (['.jpg', '.jpeg', '.png'].includes(ext)) {
     cb(null, true);
   } else {
-    cb(new Error('Hanya menerima file JPG, JPEG, PNG'));
+    cb(new Error('Produk hanya menerima file JPG, JPEG, PNG'));
   }
 };
 
-const upload = multer({ storage, fileFilter });
+const uploadProduct = multer({ storage: storageProduct, fileFilter: fileFilterProduct });
 
-module.exports = upload;
+// Storage untuk KTP
+const storageKtp = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/ktp'); // folder khusus KTP
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + '-' + file.originalname);
+  },
+});
+
+const fileFilterKtp = (req, file, cb) => {
+  const ext = path.extname(file.originalname).toLowerCase();
+  if (['.jpg', '.jpeg', '.png', '.pdf'].includes(ext)) {
+    cb(null, true);
+  } else {
+    cb(new Error('KTP hanya menerima file JPG, JPEG, PNG, atau PDF'));
+  }
+};
+
+const uploadKtp = multer({ storage: storageKtp, fileFilter: fileFilterKtp });
+
+module.exports = {
+  uploadProduct,
+  uploadKtp,
+};

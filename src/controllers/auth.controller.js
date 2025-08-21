@@ -1,4 +1,5 @@
 // src/controllers/auth.controller.js
+// src/controllers/auth.controller.js
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -7,81 +8,83 @@ const prisma = new PrismaClient();
 
 // REGISTER
 const register = async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, phone } = req.body;
 
   try {
-    const existingUser = await prisma.user.findUnique({ where: { email } });
+    // Validasi input
+    if (!name || !email || !password || !phone) {
+      return res.status(400).json({ message: "Name, email, password, dan phone wajib diisi" });
+    }
+
+    // Cek apakah email atau phone sudah terdaftar
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email },
+          { phone }
+        ]
+      }
+    });
     if (existingUser) {
-      return res.status(400).json({ message: 'Email sudah terdaftar' });
+      return res.status(400).json({ message: 'Email atau nomor HP sudah terdaftar' });
     }
 
     // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10); // 10 = salt rounds
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     // Simpan user ke DB
     const user = await prisma.user.create({
       data: {
         name,
         email,
-        password: hashedPassword
+        password: hashedPassword,
+        phone
       }
     });
 
-    res.status(201).json({ message: 'Registrasi berhasil', user: { id: user.id, name: user.name, email: user.email } });
+    res.status(201).json({
+      message: 'Registrasi berhasil',
+      user: { id: user.id, name: user.name, email: user.email, phone: user.phone }
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Terjadi kesalahan saat registrasi' });
   }
 };
 
+module.exports = {
+  register,
+};
+
+
 // LOGIN
 const login = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: { roles: { include: { role: true } } }
+    });
+
     if (!user) return res.status(401).json({ message: 'Email tidak ditemukan' });
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(401).json({ message: 'Password salah' });
 
-    const token = jwt.sign(
-      { id: user.id, email: user.email },
-      process.env.JWT_SECRET,
-      { expiresIn: '1d' }
-    );
+    const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1d' });
 
-    // ⬇️ Set cookie token
-    res.cookie('token', token, {
-      httpOnly: true,        // ⬅️ untuk frontend baca cookie, false
-      secure: false,          // ⛔ HARUS false di lokal
-      sameSite: 'Lax',
-      path: '/',
-    });
+    // Ambil role pertama sebagai default
+    const role = user.roles.length > 0 ? user.roles[0].role.name : 'user';
 
-    // ⬇️ Set cookie tambahan: name & role
-    res.cookie('user_name', encodeURIComponent(user.name), {
-      httpOnly: true,
-      sameSite: 'Lax',
-      path: '/',
-    });
+    res.cookie('token', token, { httpOnly: false, secure: false, sameSite: 'none', path: '/' });
+    res.cookie('user_name', encodeURIComponent(user.name), { httpOnly: false, sameSite: 'Lax', path: '/' });
+    res.cookie('user_role', role, { httpOnly: false, sameSite: 'Lax', path: '/' });
 
-    res.cookie('user_role', user.role, {
-      httpOnly: true,
-      sameSite: 'Lax',
-      path: '/',
-    });
-
-    // ⬇️ Kirim response
     res.json({
       message: 'Login berhasil',
       token,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
+      user: { id: user.id, name: user.name, email: user.email, role }
     });
 
   } catch (err) {
@@ -89,6 +92,7 @@ const login = async (req, res) => {
     res.status(500).json({ error: 'Terjadi kesalahan saat login' });
   }
 };
+
 
 
 // LOGOUT

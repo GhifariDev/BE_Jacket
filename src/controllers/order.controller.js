@@ -44,7 +44,7 @@ const userId = req.user?.id || 1;
 // 🔍 Lihat semua order user
 exports.getUserOrders = async (req, res) => {
   const userId = req.user.id;
-
+//  console.log('User ID:', userId);
   try {
     const orders = await prisma.order.findMany({
       where: { userId },
@@ -55,7 +55,7 @@ exports.getUserOrders = async (req, res) => {
       },
       orderBy: { createdAt: 'desc' }
     });
-
+// console.log('Orders:', JSON.stringify(orders, null, 2));
     res.json(orders);
   } catch (err) {
     res.status(500).json({ error: err.message });

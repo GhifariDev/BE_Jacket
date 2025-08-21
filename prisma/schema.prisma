@@ -6,90 +6,137 @@ datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
-enum Role {
-  user
-  admin
+
+model CartItem {
+  id        Int @id @default(autoincrement())
+  userId    Int
+  productId Int
+  quantity  Int @default(1)
+
+  user    User    @relation(fields: [userId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+}
+
+model Order {
+  id        Int         @id @default(autoincrement())
+  userId    Int
+  createdAt DateTime    @default(now())
+  status    OrderStatus @default(PENDING)
+
+  snapToken    String?   // 🔹 untuk simpan token Snap
+  snapRedirect String?   // 🔹 untuk simpan redirect URL
+
+  user       User        @relation(fields: [userId], references: [id])
+  orderItems OrderItem[]
 }
 
 
-model User {
-  id       Int       @id @default(autoincrement())
-  name     String
-  email    String    @unique
-  password String
+model OrderItem {
+  id        Int   @id @default(autoincrement())
+  orderId   Int
+  productId Int
+  userId    Int?
+  quantity  Int
+  price     Float
 
-  role     Role      @default(user) // pakai enum ⬅️
-
-
-  // Relasi
-  products   Product[]
-  reviews    Review[]
-  cartItems  CartItem[]
-  orders     Order[]
+  order   Order   @relation(fields: [orderId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+  user    User?   @relation(fields: [userId], references: [id])
 }
 
 model Product {
-  id          Int      @id @default(autoincrement())
-  title       String
-  description String
-  price       Float
-  category    String
-  stock       Int      @default(0)
-  imageUrl    String?
-  position    Int?    // ⬅️ ini urutan manual
+  id            Int           @id @default(autoincrement())
+  title         String
+  description   String
+  price         Float         // harga setelah diskon
+  originalPrice Float?        // harga normal
+  category      String
+  stock         Int           @default(0)
+  imageUrl      String
+  status        ProductStatus @default(PENDING)
+  userId        Int?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @default(now()) @updatedAt
+  position      Int?
 
-  userId      Int?
-  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // 🔹 waktu diskon
+  discountStart DateTime?
+  discountEnd   DateTime?
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  cartItems   CartItem[]
-  orderItems  OrderItem[]
+  seller     User?       @relation(fields: [userId], references: [id])
+  cartItems  CartItem[]
+  orderItems OrderItem[]
 }
+
+
+enum ProductStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 
 model Review {
   id        Int      @id @default(autoincrement())
   content   String
   rating    Int
   createdAt DateTime @default(now())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+}
 
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  phone     String   @unique
+  isBlocked Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  
+  // Tambahan untuk OAuth
+  provider   String?  // contoh: "google" utu
+  providerId String?  // ID dari Google user
+  picture    String?  // foto profil dari Google
+
+  roles         UserRole[]
+  cartItems     CartItem[]
+  orders        Order[]
+  orderItems    OrderItem[]
+  reviews       Review[]
+  otps          OTP[]
+  penjualanBaju PenjualanBaju[]
+  products      Product[] // relasi ke produk yg diupload user
+}
+
+model OTP {
+  id        Int      @id @default(autoincrement())
+  code      Int
   userId    Int
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 }
 
-model CartItem {
-  id        Int     @id @default(autoincrement())
+model PenjualanBaju {
+  id        Int                 @id @default(autoincrement())
   userId    Int
-  productId Int
-  quantity  Int     @default(1)
+  nama      String
+  alamat    String
+  alasan    String
+  gambar    String
+  status    PenjualanBajuStatus @default(PENDING)
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
 
-  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  
-  @@unique([userId, productId]) // ⬅️ ini mencegah duplikat
-
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model Order {
-  id         Int          @id @default(autoincrement())
-  userId     Int
-  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt  DateTime     @default(now())
-  status     OrderStatus  @default(PENDING)
-
-  orderItems OrderItem[]
-}
-
-model OrderItem {
-  id        Int     @id @default(autoincrement())
-  orderId   Int
-  productId Int
-  quantity  Int
-  price     Float   // snapshot harga saat pembelian
-
-  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+enum PenjualanBajuStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 enum OrderStatus {
@@ -98,4 +145,19 @@ enum OrderStatus {
   SHIPPED
   DELIVERED
   CANCELLED
+}
+
+model Role {
+  id    Int        @id @default(autoincrement())
+  name  String     @unique
+  users UserRole[]
+}
+
+model UserRole {
+  userId Int
+  roleId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
 }

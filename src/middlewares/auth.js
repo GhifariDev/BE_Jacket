@@ -7,11 +7,28 @@ const authenticateUser = async (req, res, next) => {
     if (!token) return res.status(401).json({ message: "Unauthorized" });
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await prisma.user.findUnique({ where: { id: decoded.id } });
 
-    if (!user) return res.status(401).json({ message: "Unauthorized" });
+    const userFromDb = await prisma.user.findUnique({
+      where: { id: decoded.id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        isBlocked: true,
+        roles: { select: { role: { select: { name: true } } } }
+      }
+    });
 
-    req.user = user;
+    if (!userFromDb) return res.status(401).json({ message: "Unauthorized" });
+    if (userFromDb.isBlocked) return res.status(401).json({ message: "blocked" });
+
+    req.user = {
+      id: userFromDb.id,
+      name: userFromDb.name,
+      email: userFromDb.email,
+      role: userFromDb.roles.map(r => r.role.name)
+    };
+
     next();
   } catch (err) {
     console.error(err);

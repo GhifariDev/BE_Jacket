@@ -2,16 +2,13 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-const isAdmin = async (req, res, next) => {
+const isAdmin = (req, res, next) => {
   try {
-    // ⬅️ Ambil user dari req.user, bukan req.userId
     const user = req.user;
+    if (!user) return res.status(401).json({ error: 'Unauthorized' });
 
-    if (!user) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-
-    if (user.role !== 'admin') {
+    const roles = user.role || []; // ← sesuaikan dengan key di authenticateUser
+    if (!roles.includes('admin')) {
       return res.status(403).json({ error: 'Access denied. Admin only.' });
     }
 
@@ -21,5 +18,8 @@ const isAdmin = async (req, res, next) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+module.exports = isAdmin;
+
 
 module.exports = isAdmin;
